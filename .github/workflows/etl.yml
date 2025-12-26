@@ -6,9 +6,12 @@ on:
 jobs:
   etl:
     runs-on: ubuntu-latest
+    env:
+      COIN_LIST: bitcoin,ethereum,ripple
+      DAYS_BACK: 30
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -16,3 +19,9 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+      - name: Run Extract
+        run: |
+          python -m etl.extract
+      - name: Run Transform
+        run: |
+          python -m etl.transform

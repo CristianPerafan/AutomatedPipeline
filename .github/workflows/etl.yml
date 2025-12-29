@@ -1,8 +1,6 @@
 name: Crypto ETL Pipeline
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 jobs:
   etl:
     runs-on: ubuntu-latest

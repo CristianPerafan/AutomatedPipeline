@@ -24,7 +24,7 @@ def fetch_coin(
     days_back: int,
 ) -> Dict:
     base_url = "https://api.coingecko.com/api/v3/coins"
-    endpoint = f"{base_url}/{coin}/market_chart"
+    endpoint = f"{base_url}/{coin}/ohlc"
     params = {
         "vs_currency": "usd",
         "days": days_back,

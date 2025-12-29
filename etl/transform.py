@@ -1,6 +1,7 @@
 import json
 import logging
 import polars as pl
+import polars_talib as plta
 
 from pathlib import Path
 from typing import List, Dict
@@ -17,9 +18,6 @@ def _to_df(
     asset: str,
     column_name: str
 ) -> pl.DataFrame:
-    """
-    Convierte listas [timestamp, value] en Polars DataFrame
-    """
     return pl.DataFrame(
         values,
         schema=["timestamp", column_name],
@@ -31,23 +29,43 @@ def _to_df(
         ]
     )
 
+def _ohlc_to_df(
+    ohlc_data: list[list],
+    asset: str,
+) -> pl.DataFrame:
+    return (
+        pl.DataFrame(
+            ohlc_data,
+            schema=["timestamp", "open", "high", "low", "close"],
+            orient="row"
+        )
+        .with_columns([
+            pl.from_epoch("timestamp", time_unit="ms"),
+            pl.lit(asset).alias("asset"),
+        ])
+    )
+
+
+def technical_indicators(
+    df: pl.DataFrame
+) -> pl.DataFrame:
+    df = df.with_columns([
+        pl.col("close").ta.ema(5).alias("ema5"),
+    ])
+    return df
+    
 
 def transform(raw_data: List[Dict]) -> pl.DataFrame:
-    frames = []
+    frames: list[pl.DataFrame] = []
 
     for coin_data in raw_data:
         coin = coin_data["coin"]
-        data = coin_data["data"]
+        ohlc = coin_data["data"]
 
-        price_df = _to_df(data["prices"], coin, "price_usd")
-        volume_df = _to_df(data["total_volumes"], coin, "volume_usd")
-        market_cap_df = _to_df(data["market_caps"], coin, "market_cap_usd")
+        ohlc_df = _ohlc_to_df(ohlc, coin)
 
-        df = (
-            price_df
-            .join(volume_df, on=["timestamp", "asset"])
-            .join(market_cap_df, on=["timestamp", "asset"])
-        )
+        df = technical_indicators(ohlc_df)
+
 
         frames.append(df)
 
